@@ -1,0 +1,106 @@
+<link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+<script src="/socket.io/socket.io.js"></script>
+<script type="text/javascript" src="js/vue.js"></script>
+<style type="text/css">
+	.scrollBar{
+		height: 500px;
+		overflow-y: scroll;
+	}
+	.chat-box {
+		width: 100%;
+		height: 450px;
+		border: 1px solid #ccc;
+		overflow-y: auto;
+	}
+	.chat-box li{
+		line-height: 30px;
+		font-size: 18px;
+	}
+</style>
+<nav class="navbar navbar-default navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">Chat</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-right">
+        <li class="active"><a href="javascript:;"><%=userName%></a></li>
+        <li class=""><a href="javascript:;">退出</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="container-fluid" style="margin-top: 60px;" id="chatBord">
+	<div class="row">
+		<div class="col-sm-2 scrollBar">
+		  <ul class="nav nav-sidebar">
+		   	<li v-for='item in users'>
+      			<a href=javascript:;">{{ item }}</a>
+      		</li>
+		  </ul>
+		</div>
+		<div class="col-sm-9" >
+		      <div class="chat-box">
+		      	<ul>
+		      		<li v-for='item in userMes'>
+		      			{{ item.userName }} --- 说：{{item.message}}
+		      		</li>
+		      	</ul>
+		      </div>
+		      <input type="text" style="margin-top: 10px;" class="form-control" placeholder="请输入聊天内容" v-model="mes" >
+		      <input class="btn btn-default" style="float: right;" type="button" value="发送" v-on:click="sendMes">
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	
+	var so = io();
+	so.connect('http://localhost:3000');
+
+	so.on("send mes",function (data){
+		userMes.push(data);
+	});
+
+	var userMes = [
+		{
+			userName:"王允",
+			message:"你好"
+		}
+	]
+	var user = '<%=userName%>';
+
+	var users = [user];
+
+	so.emit("userName",user);
+	so.on("userName",function (data){
+		console.log(data);
+		//users = data;	
+		for( var i = 0; i < data.length; i++ ){
+			users[i] = data[i]
+		}	
+	});
+
+	new Vue({
+		el:"#chatBord",
+		data:{
+			mes:"",
+			userMes:userMes,
+			users:users
+		},
+		methods:{
+			sendMes:function (){
+				userMes.push({
+					userName: user,
+					message:this.mes
+				});
+				
+
+				so.emit("send mes",{
+					userName: user,
+					message:this.mes
+				});
+				this.mes = "";
+			}
+		}
+	})
+</script>
